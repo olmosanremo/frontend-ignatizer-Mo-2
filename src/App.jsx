@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import MinimalDrawingCanvas from './components/MinimalDrawingCanvas';
 import ControlPanel from './components/ControlPanel';
+import DrawingList from './components/DrawingList';
 import { saveDrawing, loadDrawing, updateDrawing, getAllDrawings, deleteDrawing } from './backendApi/api';
+import './App.css'; // Importiere die CSS-Datei
 
 const App = () => {
     const [lines, setLines] = useState({ red: [], yellow: [], green: [] });
@@ -10,6 +12,7 @@ const App = () => {
     const [trackName, setTrackName] = useState('');
     const [originalTrackName, setOriginalTrackName] = useState('');
     const [drawings, setDrawings] = useState([]);
+    const [isDrawingListVisible, setIsDrawingListVisible] = useState(false);
     const canvasRef = useRef(null);
 
     const toggleEraseMode = () => {
@@ -31,6 +34,7 @@ const App = () => {
                 setOriginalTrackName(trackName);
                 alert('Drawing saved!');
             }
+            handleFetchDrawings(); // Aktualisiere die Liste nach dem Speichern
         } catch (error) {
             alert('Error saving drawing.');
         }
@@ -43,6 +47,8 @@ const App = () => {
                 setLines(drawing.lines);
                 setTrackName(drawing.name);
                 setOriginalTrackName(drawing.name);
+                setIsDrawingListVisible(false); // Schließe das Fenster nach dem Laden
+                handleFetchDrawings(); // Aktualisiere die Liste nach dem Laden
             } else {
                 alert('Drawing not found!');
             }
@@ -70,7 +76,7 @@ const App = () => {
         try {
             await deleteDrawing(id);
             alert('Drawing deleted!');
-            handleFetchDrawings();
+            handleFetchDrawings(); // Aktualisiere die Liste nach dem Löschen
         } catch (error) {
             alert('Error deleting drawing.');
         }
@@ -86,6 +92,19 @@ const App = () => {
 
     return (
         <div>
+            <button onClick={() => setIsDrawingListVisible(true)}>Logo Button</button>
+            {isDrawingListVisible && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <DrawingList
+                            drawings={drawings}
+                            onLoad={handleLoad}
+                            onDelete={handleDelete}
+                        />
+                        <button onClick={() => setIsDrawingListVisible(false)}>Close</button>
+                    </div>
+                </div>
+            )}
             <ControlPanel setColor={setColor} toggleEraseMode={toggleEraseMode} isErasing={isErasing} />
             <input
                 type="text"
@@ -97,18 +116,6 @@ const App = () => {
             <div>
                 <button onClick={handleSave}>Save Drawing</button>
                 <button onClick={clearDrawing}>Clear Drawing</button>
-            </div>
-            <div>
-                <h2>All Drawings</h2>
-                <ul>
-                    {drawings.map(drawing => (
-                        <li key={drawing._id}>
-                            {drawing.name} (ID: {drawing._id})
-                            <button onClick={() => handleLoad(drawing._id)}>Load</button>
-                            <button onClick={() => handleDelete(drawing._id)}>Delete</button>
-                        </li>
-                    ))}
-                </ul>
             </div>
         </div>
     );
